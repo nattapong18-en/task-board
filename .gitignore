@@ -1,5 +1,9 @@
 .env
 docs/data.md
+cloudflare/node_modules/
+cloudflare/public/
+cloudflare/.wrangler/
+cloudflare/.dev.vars*
 node_modules/
 api/node_modules/
 npm-debug.log*

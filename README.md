@@ -2,6 +2,8 @@
 
 เว็บจำลอง CRUD ขนาดเล็กสำหรับเรียนรู้ Docker แบบลงมือทำ ตั้งแต่การสร้าง image, เชื่อมต่อหลาย containers และจัดเก็บข้อมูล ไปจนถึงนำระบบไปรันบนเครื่องอื่น
 
+ทดลองใช้งานออนไลน์: [Mini Task Board บน Cloudflare](https://mini-task-board.664110310060.workers.dev)
+
 ```text
 Browser :8080
       │
@@ -30,6 +32,7 @@ Browser :8080
 ```text
 .
 ├── api/                    # Express API, PostgreSQL store และ tests
+├── cloudflare/             # Worker API, D1 migration และ deployment config
 ├── docs/images/            # ภาพหลักฐานการทำงาน
 ├── web/                    # Static UI และ Nginx reverse proxy
 ├── compose.yaml            # Local build จาก source
@@ -194,6 +197,39 @@ docker compose --env-file .env -f compose.deploy.yaml up -d
 ```
 
 Compose จะ recreate เฉพาะ service ที่ image เปลี่ยน และไม่ลบ database volume
+
+## 7. Deploy เป็นเว็บสาธารณะบน Cloudflare
+
+เวอร์ชันออนไลน์ใช้หน้าเว็บชุดเดียวกัน แต่เปลี่ยน backend จาก Express + PostgreSQL ใน Docker เป็น Cloudflare Worker + D1 เพื่อให้แชร์ลิงก์ให้ผู้อื่นทดลองได้โดยไม่ต้องเปิดเครื่องเราไว้
+
+Production URL: <https://mini-task-board.664110310060.workers.dev>
+
+ติดตั้ง dependencies และเข้าสู่ระบบ Cloudflare:
+
+```bash
+cd cloudflare
+npm ci
+npx wrangler login
+```
+
+เมื่อต้อง deploy ในบัญชี Cloudflare ใหม่ ให้สร้าง D1 และนำ `database_id` ที่ได้ไปใส่ใน `wrangler.jsonc`:
+
+```bash
+npx wrangler d1 create mini-task-board --location=apac
+npm run db:migrate:remote
+npm run deploy
+```
+
+หลังจากตั้งค่า database แล้ว การอัปเดตครั้งต่อไปใช้เพียง:
+
+```bash
+cd cloudflare
+npm ci
+npm test
+npm run deploy
+```
+
+ไฟล์ใน `cloudflare/public/` ถูกสร้างจาก `web/` ตอน build และไม่ถูกเก็บใน Git ส่วนข้อมูลของ D1 แยกจาก PostgreSQL volume ของเวอร์ชัน Docker
 
 ## API reference
 
