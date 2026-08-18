@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Mini Task Board for practising Docker">
+    <title>Mini Task Board</title>
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <main class="shell">
+      <header>
+        <div>
+          <p class="eyebrow">DOCKER LAB</p>
+          <h1>Mini Task Board</h1>
+          <p class="subtitle">รายการเล็ก ๆ สำหรับฝึก container แบบครบชุด</p>
+        </div>
+        <div class="status"><span></span> API connected</div>
+      </header>
+
+      <section class="board" aria-labelledby="board-title">
+        <div class="board-heading">
+          <div>
+            <h2 id="board-title">งานของฉัน</h2>
+            <p id="summary">กำลังโหลดรายการ...</p>
+          </div>
+          <button id="clear-completed" class="ghost" type="button">ลบงานที่เสร็จแล้ว</button>
+        </div>
+
+        <form id="task-form">
+          <label class="sr-only" for="task-title">ชื่องานใหม่</label>
+          <input id="task-title" name="title" maxlength="200" placeholder="เช่น ลองดู docker compose logs" required>
+          <button type="submit">+ เพิ่มงาน</button>
+        </form>
+
+        <p id="message" class="message" role="status" aria-live="polite"></p>
+        <ul id="task-list" class="task-list" aria-label="รายการงาน"></ul>
+        <div id="empty-state" class="empty" hidden>
+          <div>✓</div>
+          <h3>ยังไม่มีงาน</h3>
+          <p>เพิ่มงานแรกเพื่อทดสอบการบันทึกลง PostgreSQL</p>
+        </div>
+      </section>
+    </main>
+    <script src="/app.js" defer></script>
+  </body>
+</html>
+
