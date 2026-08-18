@@ -1,6 +1,6 @@
-# Mini Task Board — Docker Review Lab
+# Mini Task Board — Docker Learning Project
 
-เว็บจำลอง CRUD ขนาดเล็กสำหรับทบทวน Docker แบบครบเส้นทาง ตั้งแต่ build image ไปจนถึงนำไปรันบนเครื่องอื่น
+เว็บจำลอง CRUD ขนาดเล็กสำหรับเรียนรู้ Docker แบบลงมือทำ ตั้งแต่การสร้าง image, เชื่อมต่อหลาย containers และจัดเก็บข้อมูล ไปจนถึงนำระบบไปรันบนเครื่องอื่น
 
 ```text
 Browser :8080
@@ -15,7 +15,7 @@ Browser :8080
 
 มีเพียง Nginx ที่เปิดพอร์ตออกจาก Docker ส่วน API และฐานข้อมูลสื่อสารกันด้วย service name บน Compose networks
 
-## สิ่งที่ได้ทบทวน
+## สิ่งที่ได้เรียนรู้
 
 - Dockerfile, build context, layer cache และ `.dockerignore`
 - production dependencies และการรัน Node.js ด้วย non-root user
