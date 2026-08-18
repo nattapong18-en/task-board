@@ -4,6 +4,20 @@
 
 ทดลองใช้งานออนไลน์: [Mini Task Board บน Cloudflare](https://mini-task-board.664110310060.workers.dev)
 
+## ระบบนี้ทำงานอย่างไร
+
+โปรเจกต์นี้แบ่งออกเป็น 3 ส่วนหลัก:
+
+- **Frontend** คือหน้าเว็บที่ผู้ใช้มองเห็นและกดใช้งาน อยู่ในโฟลเดอร์ `web/`
+- **Backend หรือ API** รับคำสั่งจากหน้าเว็บ ตรวจสอบข้อมูล และสั่งอ่านหรือเขียนฐานข้อมูล
+- **Database** เก็บรายการงาน เช่น ชื่องาน สถานะ และเวลาที่สร้าง
+
+ตัวอย่างเช่น เมื่อผู้ใช้กด **เพิ่มงาน** หน้าเว็บจะส่ง `POST /api/tasks` พร้อมชื่องานไปยัง Backend จากนั้น Backend จะตรวจสอบชื่องาน บันทึกลง Database และส่งข้อมูลที่สร้างแล้วกลับมาให้หน้าเว็บแสดงผล
+
+โปรเจกต์นี้มีวิธีรัน 2 แบบ โดยใช้หน้าเว็บและรูปแบบ API เดียวกัน แต่ใช้ Backend และ Database คนละชุด
+
+### แบบที่ 1: รันด้วย Docker
+
 ```text
 Browser :8080
       │
@@ -15,7 +29,22 @@ Browser :8080
                                       postgres_data volume
 ```
 
-มีเพียง Nginx ที่เปิดพอร์ตออกจาก Docker ส่วน API และฐานข้อมูลสื่อสารกันด้วย service name บน Compose networks
+- `web` ใช้ Nginx แสดงหน้าเว็บและส่งคำขอที่ขึ้นต้นด้วย `/api` ต่อไปยัง `api`
+- `api` ใช้ Node.js และ Express เป็น Backend
+- `db` ใช้ PostgreSQL เก็บข้อมูล
+- ทั้งสามส่วนรันเป็นคนละ container และ Docker Compose ช่วยเชื่อมต่อให้ทำงานร่วมกัน
+
+ผู้ใช้เข้าผ่าน `localhost:8080` เพียงจุดเดียว ส่วน Express และ PostgreSQL ติดต่อกันภายใน Docker ด้วยชื่อ service `api` และ `db` ฐานข้อมูลจึงไม่ต้องเปิดให้เข้าถึงจากภายนอกโดยตรง ข้อมูลถูกเก็บใน named volume ชื่อ `postgres_data` เพื่อให้ยังอยู่หลังจากสร้าง container ใหม่
+
+### แบบที่ 2: เว็บออนไลน์บน Cloudflare
+
+```text
+Browser ──▶ Static website ── /api ──▶ Cloudflare Worker ──▶ D1 Database
+```
+
+Cloudflare ไม่ได้รัน Docker Compose ชุดนี้โดยตรง จึงใช้ Worker ทำหน้าที่แทน Express และใช้ D1 ทำหน้าที่แทน PostgreSQL ส่วนหน้าเว็บยังนำมาจากโฟลเดอร์ `web/` ชุดเดิม
+
+ข้อมูลใน D1 แยกจาก PostgreSQL ของเวอร์ชัน Docker ดังนั้นงานที่เพิ่มบน `localhost:8080` จะไม่ปรากฏบนเว็บไซต์ Cloudflare และงานบน Cloudflare ก็จะไม่ปรากฏใน Docker
 
 ## สิ่งที่ได้เรียนรู้
 
@@ -38,6 +67,24 @@ Browser :8080
 ├── compose.yaml            # Local build จาก source
 ├── compose.deploy.yaml     # Pull immutable images จาก Docker Hub
 └── .env.example            # ตัวแปรตัวอย่าง (ไม่เก็บ .env ใน Git)
+```
+
+โฟลเดอร์ที่อาจดูคล้ายกันแต่มีหน้าที่ต่างกัน:
+
+- `web/` คือ Frontend ที่ทั้งเวอร์ชัน Docker และ Cloudflare ใช้ร่วมกัน
+- `api/` คือ Express Backend สำหรับเวอร์ชัน Docker เท่านั้น
+- `cloudflare/` คือ Backend และการตั้งค่าสำหรับเวอร์ชันออนไลน์เท่านั้น ไม่ได้มาแทนที่ Docker
+
+ภายใน `cloudflare/` ประกอบด้วย:
+
+```text
+cloudflare/
+├── src/index.js                     # Worker API สำหรับจัดการรายการงาน
+├── migrations/0001_create_tasks.sql # คำสั่งสร้างตาราง tasks ใน D1
+├── scripts/prepare-assets.mjs       # คัดลอกหน้าเว็บจาก web/ ก่อน deploy
+├── test/worker.test.js              # Tests ของ Worker API
+├── package.json                     # คำสั่ง build, test และ deploy
+└── wrangler.jsonc                   # การตั้งค่า Worker, assets และ D1
 ```
 
 ## หลักฐานการทำงาน
@@ -210,7 +257,7 @@ Compose จะ recreate เฉพาะ service ที่ image เปลี่�
 
 ## 7. Deploy เป็นเว็บสาธารณะบน Cloudflare
 
-เวอร์ชันออนไลน์ใช้หน้าเว็บชุดเดียวกัน แต่เปลี่ยน backend จาก Express + PostgreSQL ใน Docker เป็น Cloudflare Worker + D1 เพื่อให้แชร์ลิงก์ให้ผู้อื่นทดลองได้โดยไม่ต้องเปิดเครื่องเราไว้
+เวอร์ชันออนไลน์ใช้หน้าเว็บชุดเดียวกัน แต่เปลี่ยน Backend จาก Express + PostgreSQL ใน Docker เป็น Cloudflare Worker + D1 เพื่อให้แชร์ลิงก์ให้ผู้อื่นทดลองได้โดยไม่ต้องเปิดเครื่องเราไว้ โค้ดและการตั้งค่าของเวอร์ชันนี้จึงอยู่ในโฟลเดอร์ `cloudflare/`
 
 Production URL: <https://mini-task-board.664110310060.workers.dev>
 
